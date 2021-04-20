@@ -1,37 +1,101 @@
-# Copyright 2018 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-# [START gae_python38_app]
-# [START gae_python3_app]
-from flask import Flask
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+import pandas as pd
+import os
 
 
-# If `entrypoint` is not defined in app.yaml, App Engine will look for an app
-# called `app` in `main.py`.
-app = Flask(__name__)
+# -------------------------- PYTHON FUNCTIONS ---------------------------- #
 
 
-@app.route('/')
-def hello():
-    """Return a friendly HTTP greeting."""
-    return 'Hello World!'
+def add_numbers(first_num,second_num):
+    new_num = first_num + second_num
+    return new_num
+
+def multiply_numbers(first_num,second_num):
+    new_num = first_num * second_num
+    return new_num
+
+
+def build_banner():
+    return html.Div(
+        id='banner',
+        className='banner',
+        children=[
+            html.Img(src=app.get_asset_url('dsc-logo2.png')),
+        ],
+    )
+
+
+# -------------------------- LOAD DATA ---------------------------- #
+
+
+csv_files_path = os.path.join('data/data.csv')
+
+data_df = pd.read_csv(csv_files_path)
+
+add_num_list = []
+multiply_num_list = []
+
+for index, row in data_df.iterrows():
+    add_num_list.append(add_numbers(row['first_num'], row['second_num']))
+    multiply_num_list.append(multiply_numbers(row['first_num'], row['second_num']))
+
+data_df['add_num'] = add_num_list
+data_df['multiply_num'] = multiply_num_list
+
+
+# -------------------------- TEXT ---------------------------- #
+
+
+dash_text = '''
+
+This is an example of a DSC dashboard.
+'''
+
+
+# -------------------------- DASH ---------------------------- #
+
+
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets, assets_folder='assets')
+server = app.server
+
+app.config.suppress_callback_exceptions = True
+
+
+# -------------------------- PROJECT DASHBOARD ---------------------------- #
+
+
+app.layout = html.Div(children=[
+    html.H1(
+        children=[
+            build_banner(),
+            html.P(
+                id='instructions',
+                children=dash_text),
+            ]
+    ),
+
+    dcc.Graph(
+        id='example-graph',
+        figure={
+            'data': [
+                {'x': data_df.index.values.tolist(), 'y': data_df['add_num'], 'type': 'bar', 'name': 'Add Numbers'},
+                {'x': data_df.index.values.tolist(), 'y': data_df['multiply_num'], 'type': 'bar', 'name': 'Multiply Numbers'},
+            ],
+            'layout': {
+                'title': 'Dash Data Visualization'
+            }
+        }
+    )
+])
+
+
+
+# -------------------------- MAIN ---------------------------- #
 
 
 if __name__ == '__main__':
-    # This is used when running locally only. When deploying to Google App
-    # Engine, a webserver process such as Gunicorn will serve the app. This
-    # can be configured by adding an `entrypoint` to app.yaml.
-    app.run(host='127.0.0.1', port=8080, debug=True)
-# [END gae_python3_app]
-# [END gae_python38_app]
+    app.run_server(host='0.0.0.0', port=8080, debug=True, use_reloader=False)
