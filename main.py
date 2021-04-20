@@ -3,10 +3,11 @@ import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
 import os
+import pathlib
 
 
 # -------------------------- PYTHON FUNCTIONS ---------------------------- #
-
+BASE_PATH = pathlib.Path(__file__).parent.resolve()
 
 def add_numbers(first_num,second_num):
     new_num = first_num + second_num
